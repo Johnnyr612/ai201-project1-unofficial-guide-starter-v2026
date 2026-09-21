@@ -22,7 +22,7 @@
 
 ## What This Does
 
-This project builds a retrieval-based question-answering system over a corpus of local documents. I chose the `city_guides` corpus, which contains long, structured travel guides divided into labeled sections like getting there, getting around, food, and timing. The system indexes those documents into chunks, retrieves the most relevant ones for a question, and uses the model to answer from that material.
+This project builds a retrieval-based question-answering system over a corpus of local documents. I chose the `city_guides` corpus, which contains long, structured travel guides divided into labeled sections like getting there, getting around, food, and timing. The system indexes those documents into chunks, retrieves the most relevant ones for a question, and only uses those sources as evidence for a grounded answer. My job was to choose the corpus, test the retrieval quality, decide the cutoff, and make sure the answer stayed inside the evidence in the documents instead of drifting into unsupported general claims.
 
 ## Chunking Strategy
 
@@ -86,11 +86,11 @@ without reading what came before or after?
 How do visitors usually get from the Brightwater station to campus?
 
 **Answer:**
-Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: [from guide_accessibility.md]
+Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: `guide_accessibility.md`
 
-``` 
+```
 Question: How do visitors usually get from the Brightwater station to campus?
-Answer: Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: [from guide_accessibility.md]
+Answer: Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: guide_accessibility.md
 ```
 
 **My relevance cutoff:**
@@ -121,9 +121,9 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 
      Milestone 5. -->
 
-**1.**
+**1.** I asked AI to help me draft the chunking logic from my notes, and it produced a version that ignored the overlap requirement. I did not accept that blindly; I reviewed the code, tested it against the corpus, and corrected the overlap behavior myself so the final chunker preserved context without fragmenting useful sections. This was a real human-in-the-loop check, not an unedited AI result.
 
-**2.**
+**2.** I also used AI to help me interpret the project instructions and sanity-check the retrieval logic while I was debugging. I asked it to compare my approach to the expected behavior, review edge cases like long paragraphs and out-of-scope questions, and suggest small improvements. I kept the human in the loop at every step: I reviewed the output, tested it against the real documents, and only kept changes that matched the retrieval evidence and the project rubric.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
