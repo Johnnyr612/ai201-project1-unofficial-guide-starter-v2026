@@ -1,4 +1,4 @@
-# The Unofficial Guide d
+# The Unofficial Guide
 
 <!-- Replace this line with your name and which corpus you picked. -->
 
