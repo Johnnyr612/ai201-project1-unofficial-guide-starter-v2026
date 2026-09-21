@@ -22,6 +22,7 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
@@ -81,23 +82,146 @@ def fallback_split(
 
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
+    """Chunk long, structured documents by sections and paragraphs.
+
+    `city_guides` is built around headings and paragraphs, not arbitrary character
+    windows. This strategy keeps each labelled section together when possible and
+    only splits a section when it grows too large.
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    target_size = 650
+    overlap_size = 0
+    chunks: list[Chunk] = []
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    def sentence_chunks(text: str) -> list[str]:
+        text = text.strip()
+        if not text:
+            return []
+        if len(text) <= target_size:
+            return [text]
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+        if not sentences:
+            return [text]
 
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
-    """
-    return fallback_split(documents)
+        out: list[str] = []
+        current = ""
+        for sentence in sentences:
+            candidate = f"{current} {sentence}".strip()
+            if len(candidate) <= target_size:
+                current = candidate
+            else:
+                if current:
+                    out.append(current)
+                if len(sentence) > target_size:
+                    # Very long sentences should still be broken up without losing meaning.
+                    for i in range(0, len(sentence), target_size):
+                        piece = sentence[i : i + target_size].strip()
+                        if piece:
+                            out.append(piece)
+                    current = ""
+                else:
+                    current = sentence
+        if current:
+            out.append(current)
+        return out
+
+    def finalize_block(block: str, index_start: int) -> None:
+        nonlocal chunks
+        if not block.strip():
+            return
+        parts = sentence_chunks(block)
+        for i, part in enumerate(parts):
+            idx = index_start + i
+            chunks.append(
+                Chunk(
+                    text=part.strip(),
+                    source=doc.source,
+                    index=idx,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    for doc in documents:
+        blocks = [b.strip() for b in re.split(r"\n\s*\n+", doc.text.strip()) if b.strip()]
+
+        if not blocks:
+            continue
+
+        current: list[str] = []
+        current_len = 0
+        doc_index = 0
+
+        for block in blocks:
+            block_text = block.strip()
+            if block_text.startswith("#"):
+                if current:
+                    buffer = "\n\n".join(current)
+                    for part in sentence_chunks(buffer):
+                        chunks.append(
+                            Chunk(
+                                text=part.strip(),
+                                source=doc.source,
+                                index=doc_index,
+                                produced_by="chunker.py::split_documents",
+                            )
+                        )
+                        doc_index += 1
+                    current = []
+                    current_len = 0
+                current.append(block_text)
+                current_len = len(block_text)
+                continue
+
+            candidate = "\n\n".join(current + [block_text]) if current else block_text
+            if len(candidate) <= target_size:
+                current.append(block_text)
+                current_len = len(candidate)
+                continue
+
+            if current:
+                buffer = "\n\n".join(current)
+                for part in sentence_chunks(buffer):
+                    chunks.append(
+                        Chunk(
+                            text=part.strip(),
+                            source=doc.source,
+                            index=doc_index,
+                            produced_by="chunker.py::split_documents",
+                        )
+                    )
+                    doc_index += 1
+                current = []
+                current_len = 0
+
+            # If a single paragraph is too long, split it into sentence-size chunks.
+            for part in sentence_chunks(block_text):
+                chunks.append(
+                    Chunk(
+                        text=part.strip(),
+                        source=doc.source,
+                        index=doc_index,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+                doc_index += 1
+
+        if current:
+            buffer = "\n\n".join(current)
+            for part in sentence_chunks(buffer):
+                chunks.append(
+                    Chunk(
+                        text=part.strip(),
+                        source=doc.source,
+                        index=doc_index,
+                        produced_by="chunker.py::split_documents",
+                    )
+                )
+                doc_index += 1
+
+    # Deliberately keep overlap at 0 for city guides: the documents are already
+    # sectioned, and a small repeat across boundary lines was creating fragmentary
+    # chunks that merged unrelated material instead of preserving useful context.
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
