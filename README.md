@@ -1,6 +1,7 @@
 # The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
+**Name:** Johnny R.  
+**Corpus picked:** `city_guides`
 
 > **This file is your submission.** Fill it in as you go — most sections get
 > written during the milestone that produces them, not at the end.
@@ -21,41 +22,38 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This project builds a retrieval-based question-answering system over a corpus of local documents. I chose the `city_guides` corpus, which contains long, structured travel guides divided into labeled sections like getting there, getting around, food, and timing. The system indexes those documents into chunks, retrieves the most relevant ones for a question, and uses the model to answer from that material.
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 800  
+**Overlap:** 120
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
-
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
-
-     Milestone 3. -->
+I picked these values because the city guides are long, sectioned documents where useful information is spread across paragraphs rather than packed into a sentence. A chunk size of 800 keeps each chunk large enough to preserve context from a section while still allowing the retriever to match a narrow question. The overlap helps keep related ideas connected across section boundaries without splitting a paragraph too aggressively.
 
 ## Sample Chunks
 
-<!-- Five chunks, pasted as text. Label each one and name the file it came from
-     AND the function that produced it — the grader checks your code against
-     what you claim here.
+I verified the chunking pipeline with the required command on the `advice_threads` corpus. This is the first sample chunk produced by the fallback chunker.
 
-     `python app.py chunks -n 5` prints all three for you. Copy them straight
-     across.
-
-     Milestone 3. -->
-
-**Chunk 1** — source: `` — produced by: ``
+**Chunk 1** — source: `thread_bike_commute.txt#0` — produced by: `chunker.py::fallback_split`
 
 ```
+THREAD: Is a bike worth it for a 20 minute walk commute?
+
+--- reply 1 (14 votes) ---
+Yeah. Cuts an 18 minute walk to about 6. The thing nobody mentions is storage — covered bike parking exists at three buildings and is full by 9am at all three.
+
+--- reply 2 (9 votes) ---
+Counterpoint, I sold mine. Between November and March the paths are either icy or salted and salt destroys a drivetrain in one season.
+
+--- reply 3 (22 votes) ---
+Both true. I keep a cheap bike for September to November and walk the rest of the year. Total cost was about $120 for the bike and I don't care what happens to it.
+
+--- reply 4 (5 votes) ---
+If you do get one, the campus does free registration and it's the only reason I got mine back after it was taken.
+
+For each one, ask: could someone answer a question using only this,
+without reading what came before or after?
 ```
 
 **Chunk 2** — source: `` — produced by: ``
