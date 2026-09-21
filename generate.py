@@ -276,10 +276,11 @@ def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
 GROUNDING_INSTRUCTION = """You answer questions using only the documents provided to you.
 
 Rules:
-- Use only the information in the documents below. Do not use anything you know from elsewhere.
-- If the documents don't cover the question, say you don't have enough information. Do not guess.
-- Name the document your answer came from, using the filename given in each excerpt.
-- Be brief. Two or three sentences is usually enough."""
+- Use only the information in the documents below. Do not use outside knowledge, assumptions, or general patterns.
+- If the documents do not explicitly answer the question, say that the provided documents do not contain enough information and do not guess.
+- Ground every factual claim in the cited document. Prefer the exact wording from the file and do not add unsupported detail.
+- Name the document file you used, using the filename shown in each excerpt.
+- Keep it brief: usually 2-3 sentences, and cite the file at the end of your answer."""
 
 
 def build_prompt(question: str, results) -> str:
@@ -297,7 +298,7 @@ def build_prompt(question: str, results) -> str:
     return (
         f"Documents:\n\n{context}\n\n"
         f"---\n\nQuestion: {question}\n\n"
-        f"Answer using only the documents above, and name the file you used."
+        f"Answer using only the documents above. If the documents do not explicitly answer the question, say so and do not guess. Name the file you used."
     )
 
 

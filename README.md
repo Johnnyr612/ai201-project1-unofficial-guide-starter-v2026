@@ -83,26 +83,32 @@ without reading what came before or after?
      visible. Milestone 4. -->
 
 **Question:**
+How do visitors usually get from the Brightwater station to campus?
 
 **Answer:**
+Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: [from guide_accessibility.md]
 
-```
+``` 
+Question: How do visitors usually get from the Brightwater station to campus?
+Answer: Visitors usually get from Brightwater station to campus by walking; the guide says the station is “a 15-minute walk from campus on flat ground.” Source: [from guide_accessibility.md]
 ```
 
 **My relevance cutoff:**
 
-<!-- The number you set in config.py, and how you got there.
-
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope questions all mapped to very close chunks (best distance from `0.3165` to `0.3934`), while the out-of-scope questions stayed much further away (`0.7542` to `0.8989`). The gap is large and clean, so `0.60` sits between the two groups and still leaves room for a little ambiguity without letting unrelated material through.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| How do visitors usually get from the Brightwater station to campus? | Yes | 0.3165 |
+| Which town in the region is the easiest for people with limited mobility? | Yes | 0.3921 |
+| Why is Brightwater's riverside strip priced higher than Corry Lane? | Yes | 0.3924 |
+| What is the hardest meal to find across the region, and when does it happen? | Yes | 0.3934 |
+| What makes Kestrelford's Saturday market stand out? | Yes | 0.3179 |
+| What is the capital of Mongolia? | No | 0.7542 |
+| How do I change the oil in a diesel engine? | No | 0.8917 |
+| Who won the 1994 World Cup? | No | 0.8989 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.8459 |
+| How do I write a for loop in Rust? | No | 0.8130 |
 
 ## How I Used AI
 
