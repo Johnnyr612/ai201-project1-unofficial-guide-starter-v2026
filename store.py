@@ -18,6 +18,7 @@ rest of the project if they were wrong:
 """
 
 import os
+import re
 import shutil
 from dataclasses import dataclass
 
@@ -178,14 +179,20 @@ def build_index(
     return len(chunks)
 
 
+def _tokenize(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
 def search(
     question: str,
     top_k: int | None = None,
     corpus: str | None = None,
     variant: str = "default",
+    hybrid: bool = True,
 ) -> list[Result]:
     """
-    Retrieve the chunks closest in meaning to a question.
+    Retrieve chunks that match the question in meaning, with an optional keyword
+    BM25 boost for exact terms like names, places, and numbers.
 
     Returns them nearest-first, each with its distance.
     """
@@ -217,7 +224,69 @@ def search(
                 produced_by=str(meta.get("produced_by", "unknown")),
             )
         )
-    return results
+
+    if not hybrid:
+        return results
+
+    question_tokens = _tokenize(question)
+    if not question_tokens:
+        return results
+
+    try:
+        from rank_bm25 import BM25Okapi
+    except ImportError:
+        return results
+
+    all_docs = collection.get(include=["documents", "metadatas"])
+    documents = all_docs.get("documents", []) or []
+    metadatas = all_docs.get("metadatas", []) or []
+    if not documents:
+        return results
+
+    tokenized = [_tokenize(doc) for doc in documents]
+    bm25 = BM25Okapi(tokenized)
+    scores = bm25.get_scores(question_tokens)
+    if scores is None or len(scores) == 0:
+        return results
+
+    max_score = float(max(scores))
+    by_label: dict[str, dict[str, object]] = {}
+    for rank, result in enumerate(results):
+        by_label[result.label] = {"result": result, "semantic_rank": rank, "bm25": 0.0}
+
+    for idx, score in enumerate(scores):
+        meta = metadatas[idx] if idx < len(metadatas) else {}
+        label = f"{meta.get('source', 'unknown')}#{meta.get('index', 0)}"
+        if label in by_label:
+            by_label[label]["bm25"] = float(score)
+        else:
+            text = documents[idx]
+            by_label[label] = {
+                "result": Result(
+                    text=text,
+                    source=str(meta.get("source", "unknown")),
+                    label=label,
+                    distance=1.0,
+                    produced_by=str(meta.get("produced_by", "unknown")),
+                ),
+                "semantic_rank": len(results),
+                "bm25": float(score),
+            }
+
+    ranked = sorted(
+        by_label.values(),
+        key=lambda item: (
+            1.0 / (int(item["semantic_rank"]) + 1)
+            + (float(item["bm25"]) / (max_score + 1e-9)) * 1.5,
+            -float(item["result"].distance),
+        ),
+        reverse=True,
+    )[:top_k]
+
+    merged: list[Result] = []
+    for item in ranked:
+        merged.append(item["result"])
+    return merged
 
 
 def index_exists(corpus: str | None = None, variant: str = "default") -> bool:

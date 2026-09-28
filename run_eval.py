@@ -267,7 +267,6 @@ def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, sc
 
     print(f"\nWrote {path.relative_to(config.ROOT)}")
     print(gen.usage())
-    print("\nCommit this file. It's the evidence the run actually happened.")
 
 
 if __name__ == "__main__":
