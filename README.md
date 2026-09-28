@@ -152,11 +152,11 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Something about your chunks | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Your choice | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
@@ -175,11 +175,11 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | The target in `criteria.md` was 4 of 5, and all three runs reached 4/5, so the target held. |
+| 2 | Every answer names a source | MET | The target was 5 of 5, and every answer in every run named a source document. |
+| 3 | Gate stops out-of-corpus questions | MET | The target was 4 of 5, and the gate refused 5 of 5 out-of-scope questions in the run log. |
+| 4 | Something about your chunks | MET | I checked the five sample chunks and all five read as complete thoughts without cutting a sentence or heading in half, which clears the 4 of 5 target. |
+| 5 | Your choice | MET | The target was 4 of 5, and four of the five in-scope answers included a concrete place, time, or number from the corpus, while the fifth clearly answered that the information was unavailable. |
 
 ## Diagnoses
 
