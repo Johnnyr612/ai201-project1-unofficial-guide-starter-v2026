@@ -183,23 +183,11 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+No misses this round. All five original criteria met their targets in the before-run results, so there is no failed stage in the pipeline to diagnose. There is no pattern to find across broken questions because the system cleared every criterion on the first pass.
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+The closest weak point was the question about the “hardest meal to find across the region,” where the model answered with a “not enough information” fallback rather than a concrete factual answer. That is a useful caution flag, but it did not count as a miss under the original measurement because the system still met the retrieval, source, and gate criteria in the run log.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
-
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
+If I were to tighten one criterion, I would tighten criterion 5, “Your choice,” from 4 of 5 to 5 of 5. It is the least constrained target and the easiest one to satisfy with a vague-but-grounded answer; tightening it would force more specific place, time, or number detail in every answer. I would not revise it yet, because the criterion is still valid as written; I would tighten it only if the next round showed a pattern of weak specificity.
 
 ## The Improvement
 
