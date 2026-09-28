@@ -125,6 +125,8 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 
 **2.** I also used AI to help me interpret the project instructions and sanity-check the retrieval logic while I was debugging. I asked it to compare my approach to the expected behavior, review edge cases like long paragraphs and out-of-scope questions, and suggest small improvements. I kept the human in the loop at every step: I reviewed the output, tested it against the real documents, and only kept changes that matched the retrieval evidence and the project rubric.
 
+**3.** In this unit I used AI to help diagnose which single improvement was most likely to matter. I asked it to compare the before-run results against the likely weak points in the system and to suggest one focused experiment rather than a broad rewrite. It pointed toward hybrid retrieval for exact-term questions like the “hardest meal” case, and I tested that targeted idea against the real run log. I kept the decision grounded in the evidence: the hybrid setup did not move the numbers because the system was already clearing every criterion before the change.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
@@ -215,17 +217,10 @@ No. It did not help in a measurable way, because the system was already meeting 
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+Nothing is still broken under the original rubric. After the hybrid-search change, all five criteria were still MET in the after-run, so there was no missed target left to fix.
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
-
-     Milestone 5. -->
+The only thing I would keep an eye on is criterion 5, “Your choice,” because it is the least constrained target and the easiest one for a vague but still grounded answer to satisfy. If I were grading a harder or more adversarial corpus next unit, I would tighten that criterion or add a stricter specificity check to make sure answers keep including real details like place, time, or number. I stopped there because the current project is already meeting the original targets, and there is no evidence that a deeper fix is needed before the next unit.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
-
-     Milestone 5. -->
+I would write criterion 5 more strictly in the next unit. Right now it says “for at least 4 of my 5 questions, the answer includes a concrete place, time, or number,” which is useful but still allows a little vagueness. A clearer version would be: “For all 5 of my test questions, the answer includes a concrete place, time, or number from the corpus.” That would better match the project goal of practical, grounded answers rather than broad summaries.
