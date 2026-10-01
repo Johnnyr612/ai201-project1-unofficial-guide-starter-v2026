@@ -155,10 +155,16 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
 | 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
-| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 4/5 | 4/5 | 4/5 | MISSED |
 | 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 4. Something about your chunks | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 5. Your choice | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+
+**Real output — before run 2, question 4:** Produced by `generate.py::answer_from_chunks`, called from `run_eval.py::run_once`; recorded in `results/run_2026-09-23_1642_before.md`.
+
+```
+The provided documents do not contain enough information to identify the "hardest meal to find across the region."
+```
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
@@ -178,18 +184,18 @@ I used `top-k = 5` and set the relevance cutoff to `0.60`. The in-scope question
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
 | 1 | Retrieved chunk contains the answer | MET | The target in `criteria.md` was 4 of 5, and all three runs reached 4/5, so the target held. |
-| 2 | Every answer names a source | MET | The target was 5 of 5, and every answer in every run named a source document. |
+| 2 | Every answer names a source | MISSED | The target was 5 of 5, but the “hardest meal” answer omitted a source in runs 2 and 3, leaving only 4 of 5 answers cited in each run. |
 | 3 | Gate stops out-of-corpus questions | MET | The target was 4 of 5, and the gate refused 5 of 5 out-of-scope questions in the run log. |
 | 4 | Something about your chunks | MET | I checked the five sample chunks and all five read as complete thoughts without cutting a sentence or heading in half, which clears the 4 of 5 target. |
 | 5 | Your choice | MET | The target was 4 of 5, and four of the five in-scope answers included a concrete place, time, or number from the corpus, while the fifth clearly answered that the information was unavailable. |
 
 ## Diagnoses
 
-No misses this round. All five original criteria met their targets in the before-run results, so there is no failed stage in the pipeline to diagnose. There is no pattern to find across broken questions because the system cleared every criterion on the first pass.
+Criterion 2 was missed. The failure was in **generation**: `generate.py::build_prompt` and the system instruction ask the model to name its source, but the answer is not checked for a citation before it is returned. In the before run, the “hardest meal” answers in runs 2 and 3 omitted the source even though the retrieved-source list included `guide_eating.md`.
 
-The closest weak point was the question about the “hardest meal to find across the region,” where the model answered with a “not enough information” fallback rather than a concrete factual answer. That is a useful caution flag, but it did not count as a miss under the original measurement because the system still met the retrieval, source, and gate criteria in the run log.
+There was also a question-level retrieval failure on the same meal question, although criterion 1 still met its 4-of-5 target. A semantic-only replay (`store.py::search(..., hybrid=False)`) returned `guide_eating.md#0`, which contains only the document heading, and did not return the chunk with the answer. The hybrid search did return `guide_eating.md#2`, whose text says: “Sunday evening is the hardest meal to find anywhere except Marchwood and Thornby Wells.” This explains the fallback in the before output and gives a specific retrieval weakness for the improvement to test.
 
-If I were to tighten one criterion, I would tighten criterion 5, “Your choice,” from 4 of 5 to 5 of 5. It is the least constrained target and the easiest one to satisfy with a vague-but-grounded answer; tightening it would force more specific place, time, or number detail in every answer. I would not revise it yet, because the criterion is still valid as written; I would tighten it only if the next round showed a pattern of weak specificity.
+I did not revise any criteria. Criterion 2 measures a valid outcome; the system missed its target, so the original 5-of-5 target stays in place.
 
 ## The Improvement
 
@@ -197,7 +203,7 @@ If I were to tighten one criterion, I would tighten criterion 5, “Your choice,
 I changed retrieval to a hybrid search that combines semantic similarity with BM25 keyword matching, so questions with exact terms such as “meal,” “station,” and “market” can surface documents that a semantic-only search might miss.
 
 **Why I picked it:**
-The diagnosis pointed at a weak spot in the exact-term questions, especially the “hardest meal” case, where a keyword-heavy fact could be easier to surface with an exact-match boost.
+The semantic-only retrieval for “hardest meal” missed the answer-bearing chunk, while hybrid retrieval surfaced it. This was a question-level retrieval failure under criterion 1, even though the aggregate criterion met its 4-of-5 target.
 
 ### Run Log — After
 
@@ -213,13 +219,13 @@ The diagnosis pointed at a weak spot in the exact-term questions, especially the
 | 5. Your choice | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
 **Did it help?**
-No. It did not help in a measurable way, because the system was already meeting every original target in the before-run and the after-run stayed at the same level. The hybrid search is a reasonable improvement idea for exact-term questions, but it did not move the numbers on this corpus and did not improve the evaluation outcome.
+Yes, for retrieval and answer specificity. Criterion 1 moved from 4/5 to 5/5 per run, and criterion 5 moved from 4/5 to 5/5. The after-run’s meal answers identify Sunday evening, and the hybrid top five contains the exact answer-bearing chunk that semantic-only retrieval missed. Criterion 3 stayed at 5/5, and criterion 4 was unchanged. Citation coverage also measured 5/5 after the change, but I cannot attribute that to hybrid search: the diagnosed citation failure is in generation, and hybrid retrieval does not enforce citations.
 
 ## What's Still Broken
 
-Nothing is still broken under the original rubric. After the hybrid-search change, all five criteria were still MET in the after-run, so there was no missed target left to fix.
+No original criterion remains missed in the after-run: the five targets are MET there. However, the before run exposed an unresolved reliability risk in generation: the model sometimes omits citations, and hybrid retrieval does not prevent that. The after-run's 5/5 citation result is encouraging, but it is not evidence that the failure mechanism was fixed.
 
-The only thing I would keep an eye on is criterion 5, “Your choice,” because it is the least constrained target and the easiest one for a vague but still grounded answer to satisfy. If I were grading a harder or more adversarial corpus next unit, I would tighten that criterion or add a stricter specificity check to make sure answers keep including real details like place, time, or number. I stopped there because the current project is already meeting the original targets, and there is no evidence that a deeper fix is needed before the next unit.
+My next change would be to validate that each generated answer names a source and retry or repair it when it does not. I stopped after hybrid retrieval because this milestone asks for one measured change; changing generation as well would make it harder to tell which change affected the results.
 
 ## What I'd Do Differently
 
